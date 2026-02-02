@@ -8,6 +8,7 @@ class Config:
     SUPABASE_URL = os.getenv('SUPABASE_URL')
     # Check for either key to support different hosting conventions
     SUPABASE_KEY = os.getenv('SUPABASE_SERVICE_KEY') or os.getenv('SUPABASE_KEY')
+    print(f"Config Initialized: URL={bool(SUPABASE_URL)}, KEY={bool(SUPABASE_KEY)}")
 
     @staticmethod
     def validate():

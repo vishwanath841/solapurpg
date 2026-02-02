@@ -55,19 +55,17 @@ def login_required(f):
     return decorated_function
 
 def get_authenticated_client(token):
-    # This is a bit of a hack in the python client to set auth header dynamically?
-    # Or we can just use the global client and set the header immediately before query? 
-    # Not thread safe.
-    
-    # Alternatively, create a fresh client. Low overhead in Python? 
-    # Just setting headers.
-    
-    # We will create a fresh client instance or use the supabase.client helper if available.
-    # Actually, `create_client` is cheap if we don't do complex setup.
-    from config import Config
+    import os
     from supabase import create_client
     
-    client = create_client(Config.SUPABASE_URL, Config.SUPABASE_KEY)
+    url = os.environ.get("SUPABASE_URL")
+    key = os.environ.get("SUPABASE_SERVICE_KEY") or os.environ.get("SUPABASE_KEY")
+    
+    if not url or not key:
+        print(f"DEBUG: Missing Supabase config in get_authenticated_client. URL: {bool(url)}, Key: {bool(key)}")
+        raise RuntimeError("Supabase configuration missing in get_authenticated_client")
+        
+    client = create_client(url, key)
     client.postgrest.auth(token)
     return client
 
