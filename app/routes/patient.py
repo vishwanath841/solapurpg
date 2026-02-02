@@ -1,10 +1,11 @@
 from flask import Blueprint, render_template, jsonify, g, request
-from app.utils import login_required, get_authenticated_client
+from app.utils import login_required, get_authenticated_client, role_required
 
 patient_bp = Blueprint('patient', __name__)
 
 @patient_bp.route('/dashboard')
 @login_required
+@role_required('patient')
 def dashboard():
     client = get_authenticated_client(g.access_token)
     
@@ -17,10 +18,6 @@ def dashboard():
     total_spent = sum([a['doctors']['consultation_fee'] or 0 for a in completed.data])
     
     # Fetch total prescriptions
-    # We can list prescriptions by getting all appointments IDs where status is completed
-    # Or just count via linking. Let's do simple query if possible or assume 1-1 with completed appts for now as approx or specific query
-    # Getting real prescription count:
-    # Get all appointment IDs for this patient
     all_appts = client.table('appointments').select('id').eq('patient_id', g.user.id).execute()
     a_ids = [x['id'] for x in all_appts.data]
     rx_count = 0
@@ -36,6 +33,7 @@ def dashboard():
 
 @patient_bp.route('/doctors')
 @login_required
+@role_required('patient')
 def view_doctors():
     client = get_authenticated_client(g.access_token)
     
@@ -45,6 +43,7 @@ def view_doctors():
 
 @patient_bp.route('/appointments/history')
 @login_required
+@role_required('patient')
 def appointment_history():
     client = get_authenticated_client(g.access_token)
     # Fetch all appointments
@@ -53,6 +52,7 @@ def appointment_history():
 
 @patient_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
+@role_required('patient')
 def profile():
     client = get_authenticated_client(g.access_token)
     
@@ -76,25 +76,17 @@ def profile():
 
 @patient_bp.route('/prescriptions')
 @login_required
+@role_required('patient')
 def prescriptions():
     client = get_authenticated_client(g.access_token)
-    # RLS ensures we only see our own
-    # Prescriptions are linked to appointments. 
-    # Query: Select Prescriptions, join Appointment to get Doctor Name/Date
-    # Supabase syntax: select(*, appointments(*, doctors(*, profiles(*))))
-    # Actually just appointments is enough if it has doctor_id
-    
     data = client.table('prescriptions').select('*, appointments(appointment_date, doctors(profiles(full_name)))').execute()
-    
     return render_template('patient_prescriptions.html', prescriptions=data.data)
 
 @patient_bp.route('/billing')
 @login_required
+@role_required('patient')
 def billing():
     client = get_authenticated_client(g.access_token)
-    
-    # Billing is derived from Completed Appointments * Doctor Fee
-    # We fetch completed appointments and join doctor details
     
     appointments = client.table('appointments').select(
         '*, doctors(consultation_fee, profiles(full_name))'

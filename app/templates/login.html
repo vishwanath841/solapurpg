@@ -17,8 +17,10 @@
 
             <!-- Visual Role Tabs -->
             <div class="role-selector">
-                <button type="button" class="role-btn active" onclick="selectRole(this, 'patient')">Patient</button>
-                <button type="button" class="role-btn" onclick="selectRole(this, 'doctor')">Doctor</button>
+                <button type="button" class="role-btn {{ 'active' if role != 'doctor' else '' }}"
+                    onclick="selectRole(this, 'patient')">Patient</button>
+                <button type="button" class="role-btn {{ 'active' if role == 'doctor' else '' }}"
+                    onclick="selectRole(this, 'doctor')">Doctor</button>
             </div>
 
             {% if error %}
@@ -28,6 +30,7 @@
             {% endif %}
 
             <form action="{{ url_for('auth.login') }}" method="POST">
+                <input type="hidden" name="role" id="roleHint" value="{{ role if role else 'patient' }}">
 
                 <div class="input-group-icon">
                     <span class="input-icon"><i class="fa-solid fa-user"></i></span>
@@ -62,8 +65,7 @@
     function selectRole(btn, role) {
         document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        // If backend needed role hint, we would set a hidden input here.
-        // For now, it's purely visual matching the request.
+        document.getElementById('roleHint').value = role;
     }
 </script>
 {% endblock %}

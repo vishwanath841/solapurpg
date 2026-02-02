@@ -16,36 +16,9 @@ def login_required(f):
                  return redirect(url_for('auth.login'))
             
             g.user = user_response.user
-            
-            # Fetch user profile including role
-            # We use the anon key in 'supabase' client, so we can only query what RLS allows.
-            # RLS allows "Users can insert their own profile" and "Public profiles are viewable by everyone".
-            # So we can query the profile for this user.
-            
-            # However, for deeper queries (like doctor seeing patients), we might need to rely on the token being passed to Supabase
-            # via postgrest client headers. The 'supabase' python client initializes with the key.
-            # To execute queries AS THE USER, we should update the headers of the client or create a new client with the token.
-            # But creating a new client every request might be heavy?
-            
-            # Supabase Python client 'postgrest' allow passing `auth` token.
-            # Changing the auth header for the global client is BAD because it's shared.
-            # We strictly need to scope it, but the Python library might not support easy per-request scoping without re-init?
-            # Actually, `supabase.auth` manages the session for the `supabase` instance? No, `supabase-py` is stateless mostly regarding the client unless using `auth.sign_in`.
-            
-            # Best way: Use the service role key for backend operations if we trust the backend (Admin style) OR
-            # Pass the user's JWT to Supabase for RLS to work on the DB side.
-            
-            # Given the requirements: "Patients can only see their own data" (RLS),
-            # we MUST pass the user's token to the Supabase client when making queries.
-            
-            # Correct approach with supabase-py:
-            # client.postgrest.auth(token)
-            
-            # But since `supabase` global object is shared, we should probably clone it or just use the REST API header manually if needed.
-            # Using `client.options(headers=...)`?
-            
-            # Let's attach the token to the request context 'g' and use a helper to get an authenticated client.
             g.access_token = access_token
+            # Specifically extract role for easy access in views and role_required
+            g.user_role = user_response.user.user_metadata.get('role', 'patient')
 
         except Exception as e:
             print(f"Auth Error: {e}")
@@ -53,6 +26,20 @@ def login_required(f):
             
         return f(*args, **kwargs)
     return decorated_function
+
+def role_required(required_role):
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            # login_required should be called before role_required
+            if not hasattr(g, 'user_role') or g.user_role != required_role:
+                # Redirect to appropriate dashboard if role mismatch
+                if g.user_role == 'doctor':
+                    return redirect(url_for('doctor.dashboard'))
+                return redirect(url_for('patient.dashboard'))
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
 
 def get_authenticated_client(token):
     import os

@@ -304,36 +304,62 @@ tr:hover td {
 /* Toasts */
 #notification-area {
     position: fixed;
-    bottom: 32px;
-    right: 32px;
-    z-index: 100;
+    top: 24px;
+    right: 24px;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
 .toast {
-    background: white;
+    background: var(--white);
     padding: 16px 24px;
     border-radius: 12px;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-    border-left: 6px solid var(--primary-color);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    border-left: 5px solid var(--secondary-color);
     display: flex;
     align-items: center;
     gap: 12px;
-    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    min-width: 300px;
+    min-width: 320px;
+    font-weight: 500;
+    color: var(--text-main);
 }
 
-@keyframes slideInRight {
+.toast i {
+    color: var(--secondary-color);
+    font-size: 1.25rem;
+}
+
+.animate-in {
+    animation: toast-in 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.animate-out {
+    animation: toast-out 0.4s ease forwards;
+}
+
+@keyframes toast-in {
     from {
-        transform: translateX(100%);
+        transform: translateX(120%);
         opacity: 0;
     }
 
     to {
         transform: translateX(0);
         opacity: 1;
+    }
+}
+
+@keyframes toast-out {
+    from {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    to {
+        transform: translateX(120%);
+        opacity: 0;
     }
 }
 

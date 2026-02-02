@@ -93,6 +93,7 @@ def login():
     data = request.form
     email = data.get('email')
     password = data.get('password')
+    selected_role = data.get('role', 'patient')
 
     try:
         auth_response = supabase.auth.sign_in_with_password({
@@ -103,15 +104,18 @@ def login():
         session_data = auth_response.session
         user = auth_response.user
         
-        # Determine redirect based on metadata or profile
-        # Use metadata from Auth User if available, else default to patient
-        role = user.user_metadata.get('role', 'patient')
+        # Verify if the user's actual role matches the selected role
+        actual_role = user.user_metadata.get('role', 'patient')
         
+        if actual_role != selected_role:
+            # Sign out immediately if role mismatch to prevent session persistence
+            supabase.auth.sign_out()
+            return render_template('login.html', error=f"Invalid login! This account is registered as a {actual_role}.")
+
         target_route = 'patient.dashboard'
-        if role == 'doctor':
+        if actual_role == 'doctor':
             target_route = 'doctor.dashboard'
-        elif role == 'admin':
-            # We don't have an admin dashboard page yet, but let's assume one or default to patient
+        elif actual_role == 'admin':
             target_route = 'patient.dashboard'
 
         resp = make_response(redirect(url_for(target_route)))
@@ -123,6 +127,14 @@ def login():
 
     except Exception as e:
         return render_template('login.html', error=str(e))
+
+@auth_bp.route('/login/doctor')
+def login_doctor():
+    return render_template('login.html', role='doctor')
+
+@auth_bp.route('/login/patient')
+def login_patient():
+    return render_template('login.html', role='patient')
 
 @auth_bp.route('/logout')
 def logout():

@@ -1,10 +1,11 @@
 from flask import Blueprint, request, jsonify, g
-from app.utils import login_required, get_authenticated_client
+from app.utils import login_required, get_authenticated_client, role_required
 
 appointment_bp = Blueprint('appointment', __name__)
 
 @appointment_bp.route('/book', methods=['POST'])
 @login_required
+@role_required('patient')
 def book_appointment():
     client = get_authenticated_client(g.access_token)
     data = request.json
@@ -17,8 +18,6 @@ def book_appointment():
         return jsonify({"error": "Missing details"}), 400
 
     # Conflict validation
-    # Check if doctor has appointment at that time
-    # (Simplified check: exact match. Real world needs time ranges)
     existing = client.table('appointments').select('id').eq('doctor_id', doctor_id).eq('appointment_date', appointment_date).execute()
     
     if existing.data:
@@ -38,22 +37,19 @@ def book_appointment():
     if res.data:
         return jsonify({"message": "Appointment booked", "data": res.data}), 201
     else:
-        # Check if error is due to RLS or other
         return jsonify({"error": "Booking failed. Please ensure you are logged in as a patient."}), 400
 
 @appointment_bp.route('/cancel/<uuid:appointment_id>', methods=['POST'])
 @login_required
+@role_required('patient')
 def cancel_appointment(appointment_id):
     client = get_authenticated_client(g.access_token)
-    
-    # Update status to cancelled
-    # RLS "Patients can cancel (update) own appointments" ensures security
     res = client.table('appointments').update({"status": "cancelled"}).eq('id', str(appointment_id)).execute()
-    
     return jsonify(res.data)
 
 @appointment_bp.route('/reschedule/<uuid:appointment_id>', methods=['POST'])
 @login_required
+@role_required('patient')
 def reschedule_appointment(appointment_id):
     client = get_authenticated_client(g.access_token)
     data = request.json
@@ -62,10 +58,6 @@ def reschedule_appointment(appointment_id):
     if not new_date:
          return jsonify({"error": "New date required"}), 400
 
-    # Validate ownership (RLS handles it, but good to check)
-    # Validate conflict? (Ideally yes, but skipping for MVP speed unless critical. 
-    #   User prompt said "Conflict validation (no double booking)" -> YES, we must validate)
-    
     # helper: get doctor_id from appointment to check conflict
     appt = client.table('appointments').select('doctor_id').eq('id', str(appointment_id)).single().execute()
     if not appt.data:
@@ -81,8 +73,7 @@ def reschedule_appointment(appointment_id):
     # Update
     res = client.table('appointments').update({
         "appointment_date": new_date,
-        "status": "pending" # Reset status to pending for doctor approval? Or keep confirmed? 
-                            # Usually rescheduling requires re-confirmation. Let's set to pending.
+        "status": "pending" 
     }).eq('id', str(appointment_id)).execute()
     
     return jsonify(res.data)

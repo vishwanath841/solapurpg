@@ -1,52 +1,90 @@
-const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Initialize Supabase correctly without variable shadowing
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// If we have an auth token, set it in the client
+if (typeof AUTH_TOKEN !== 'undefined' && AUTH_TOKEN) {
+  // In v2, we set the token manually in headers or use setSession
+  sb.auth.setSession({
+    access_token: AUTH_TOKEN,
+    refresh_token: '' // Not strictly needed for a single session view
+  });
+}
 
 // Realtime Subscriptions
-// We listen to changes in 'appointments' table
-const channel = supabase
-  .channel('public:appointments')
-  .on(
-    'postgres_changes',
-    { event: '*', schema: 'public', table: 'appointments' },
-    (payload) => {
-      console.log('Change received!', payload);
-      handleRealtimeUpdate(payload);
-    }
-  )
-  .subscribe();
+if (typeof USER_ID !== 'undefined' && USER_ID) {
+  const channel = sb
+    .channel('db-changes')
+    .on(
+      'postgres_changes',
+      {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'appointments'
+      },
+      (payload) => {
+        const newRecord = payload.new;
 
-function handleRealtimeUpdate(payload) {
-    const eventType = payload.eventType;
-    const newRecord = payload.new;
-    
-    // Show notification
-    showNotification(`Appointment ${eventType}: ID ${newRecord.id || 'N/A'}`);
-    
-    // Reload page if on dashboard (simple way to refresh data)
-    // In a SPA (React/Vue/Angular), we would update state. 
-    // Here, we can reload or use specific DOM manipulation.
-    // For "Real-time" feel without reload, we need to manipulate DOM.
-    // But since we use server-side rendering for the list, reload is easiest for this scope.
-    if (window.location.pathname.includes('dashboard')) {
-        setTimeout(() => window.location.reload(), 2000); // Wait for user to read toast
-    }
+        // If I am a doctor, and this new appointment is for ME
+        if (typeof USER_ROLE !== 'undefined' && USER_ROLE === 'doctor') {
+          if (newRecord.doctor_id === USER_ID) {
+            showNotification("🔔 New Appointment Request Received!");
+            refreshDashboard();
+          }
+        }
+
+        // If I am a patient, and my appointment status changed
+        // (This would need a 'UPDATE' listener, let's keep it simple for now as requested)
+      }
+    )
+    .on(
+      'postgres_changes',
+      {
+        event: 'UPDATE',
+        schema: 'public',
+        table: 'appointments'
+      },
+      (payload) => {
+        const oldRecord = payload.old;
+        const newRecord = payload.new;
+
+        if (typeof USER_ROLE !== 'undefined' && USER_ROLE === 'patient') {
+          if (newRecord.patient_id === USER_ID && newRecord.status !== oldRecord.status) {
+            showNotification(`📅 Appointment status updated to: ${newRecord.status}`);
+            refreshDashboard();
+          }
+        }
+      }
+    )
+    .subscribe();
+}
+
+function refreshDashboard() {
+  if (window.location.pathname.includes('dashboard')) {
+    // Subtle refresh or prompt
+    console.log("Data changed, refreshing in 3 seconds...");
+    setTimeout(() => window.location.reload(), 3000);
+  }
 }
 
 function showNotification(message) {
-    const area = document.getElementById('notification-area');
-    if (!area) {
-        const div = document.createElement('div');
-        div.id = 'notification-area';
-        document.body.appendChild(div);
-    }
-    
-    const toast = document.createElement('div');
-    toast.className = 'toast';
-    toast.innerText = message;
-    document.getElementById('notification-area').appendChild(toast);
-    
-    setTimeout(() => {
-        toast.remove();
-    }, 5000);
+  let area = document.getElementById('notification-area');
+  if (!area) {
+    area = document.createElement('div');
+    area.id = 'notification-area';
+    document.body.appendChild(area);
+  }
+
+  const toast = document.createElement('div');
+  toast.className = 'toast animate-in';
+  toast.innerHTML = `<i class="fa-solid fa-circle-info"></i> <span>${message}</span>`;
+  area.appendChild(toast);
+
+  // Play a subtle sound if possible or just visual
+
+  setTimeout(() => {
+    toast.classList.add('animate-out');
+    setTimeout(() => toast.remove(), 500);
+  }, 5000);
 }
 
-console.log("Supabase Realtime Initialized");
+console.log("Supabase Realtime Initialized for", USER_ROLE);

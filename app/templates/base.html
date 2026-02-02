@@ -18,6 +18,9 @@
     <script>
         const SUPABASE_URL = "{{ config.SUPABASE_URL }}";
         const SUPABASE_KEY = "{{ config.SUPABASE_KEY }}";
+        const AUTH_TOKEN = "{{ request.cookies.get('access_token', '') }}";
+        const USER_ID = "{{ g.user.id if g.user else '' }}";
+        const USER_ROLE = "{{ g.user_role if g.user_role else '' }}";
     </script>
     <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
 </head>

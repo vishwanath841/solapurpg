@@ -1,11 +1,12 @@
 from flask import Blueprint, render_template, g, request, jsonify
-from app.utils import login_required, get_authenticated_client
+from app.utils import login_required, get_authenticated_client, role_required
 import datetime
 
 doctor_bp = Blueprint('doctor', __name__)
 
 @doctor_bp.route('/dashboard')
 @login_required
+@role_required('doctor')
 def dashboard():
     client = get_authenticated_client(g.access_token)
     
@@ -18,7 +19,6 @@ def dashboard():
     
     # Calculate Realtime Analytics
     total_earnings = 0
-    monthly_income = [0] * 6 # Showing last 6 months matches chart labels usually, or full 12. Let's do 12.
     monthly_income = [0] * 12
 
     for appt in appointments.data:
@@ -40,6 +40,7 @@ def dashboard():
 
 @doctor_bp.route('/patients')
 @login_required
+@role_required('doctor')
 def patients():
     client = get_authenticated_client(g.access_token)
     # Get unique patients from appointments
@@ -65,6 +66,7 @@ def patients():
 
 @doctor_bp.route('/patients/<uuid:patient_id>')
 @login_required
+@role_required('doctor')
 def patient_details(patient_id):
     client = get_authenticated_client(g.access_token)
     
@@ -90,6 +92,7 @@ def patient_details(patient_id):
 
 @doctor_bp.route('/transactions')
 @login_required
+@role_required('doctor')
 def transactions():
     client = get_authenticated_client(g.access_token)
     doc_res = client.table('doctors').select('consultation_fee').eq('id', g.user.id).limit(1).execute()
@@ -102,6 +105,7 @@ def transactions():
 
 @doctor_bp.route('/schedule', methods=['GET', 'POST'])
 @login_required
+@role_required('doctor')
 def schedule():
     client = get_authenticated_client(g.access_token)
     
@@ -142,6 +146,7 @@ def schedule():
 
 @doctor_bp.route('/appointment/<uuid:appointment_id>/status', methods=['POST'])
 @login_required
+@role_required('doctor')
 def update_status(appointment_id):
     client = get_authenticated_client(g.access_token)
     data = request.json
@@ -164,6 +169,7 @@ def update_status(appointment_id):
 
 @doctor_bp.route('/prescribe/<uuid:appointment_id>', methods=['POST'])
 @login_required
+@role_required('doctor')
 def create_prescription(appointment_id):
     client = get_authenticated_client(g.access_token)
     data = request.json
