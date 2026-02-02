@@ -1,0 +1,31 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>My Profile</h1>
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('patient.dashboard') }}">Back to Dashboard</a>
+    </div>
+
+    {% if message %}
+    <div class="card" style="background: #d4edda; color: #155724;">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <form method="POST">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="full_name" value="{{ profile.full_name or '' }}" required>
+            </div>
+            <div class="form-group">
+                <label>Medical History</label>
+                <textarea name="medical_history" rows="5">{{ profile.medical_history or '' }}</textarea>
+                <small>Include allergies, past surgeries, chronic conditions.</small>
+            </div>
+            <button type="submit" class="btn btn-primary">Save Profile</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

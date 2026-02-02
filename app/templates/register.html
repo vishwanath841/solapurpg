@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Register - SHM Hospital{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <div class="auth-container">
+        <div class="auth-card glass-effect" style="max-width: 500px;">
+            <div style="text-align: left; margin-bottom: 20px;">
+                <a href="{{ url_for('auth.login') }}" style="color: white; text-decoration: none;">
+                    <i class="fa-solid fa-arrow-left"></i> Back to Login
+                </a>
+            </div>
+            <h3>Create Account</h3>
+
+            {% if error %}
+            <div class="alert-error">{{ error }}</div>
+            {% endif %}
+
+            <form action="{{ url_for('auth.register') }}" method="POST">
+
+                <div class="form-group">
+                    <label style="color:white; text-align:left; display:block; margin-left:10px;">Full Name</label>
+                    <div class="input-group-icon">
+                        <span class="input-icon"><i class="fa-solid fa-id-card"></i></span>
+                        <input type="text" name="full_name" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="color:white; text-align:left; display:block; margin-left:10px;">Email</label>
+                    <div class="input-group-icon">
+                        <span class="input-icon"><i class="fa-solid fa-envelope"></i></span>
+                        <input type="email" name="email" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="color:white; text-align:left; display:block; margin-left:10px;">Password</label>
+                    <div class="input-group-icon">
+                        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" name="password" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="color:white; text-align:left; display:block; margin-left:10px;">Confirm
+                        Password</label>
+                    <div class="input-group-icon">
+                        <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+                        <input type="password" name="confirm_password" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label style="color:white; text-align:left; display:block; margin-left:10px;">Role</label>
+                    <div class="input-group-icon">
+                        <span class="input-icon"><i class="fa-solid fa-user-tag"></i></span>
+                        <select name="role"
+                            style="width: 100%; padding: 12px 15px 12px 45px; border-radius: 25px; border:none;">
+                            <option value="patient">Patient</option>
+                            <option value="doctor">Doctor</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Captcha -->
+                <div class="form-group" style="background: rgba(255,255,255,0.2); padding: 10px; border-radius: 15px;">
+                    <label style="color:white;">Security Question: What is {{ captcha_q }}?</label>
+                    <input type="number" name="captcha" class="form-control" placeholder="Answer"
+                        style="width: 100%; padding: 8px; border-radius: 10px; border:none; margin-top:5px;" required>
+                </div>
+
+                <div style="display: flex; gap: 10px; margin-top: 20px;">
+                    <button type="submit" class="btn-login" style="flex: 1;">Register</button>
+                    <a href="{{ url_for('auth.login') }}" class="btn-login"
+                        style="flex: 1; background: rgba(255,255,255,0.2); text-align: center; text-decoration: none;">Cancel</a>
+                </div>
+            </form>
+
+            <p style="margin-top: 15px; color: white;">
+                Already have an account? <a href="{{ url_for('auth.login') }}"
+                    style="color: #ffd700; font-weight:bold;">Login</a>
+            </p>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block title %}Login - SHM Hospital{% endblock %}
+
+{% block content %}
+<div class="auth-wrapper">
+    <!-- Background Overlay/Image handled in CSS -->
+
+    <div class="auth-container">
+        <div class="auth-logo">
+            <i class="fa-solid fa-staff-snake"></i>
+            <div class="logo-text">Medical<br>Dashboard</div>
+        </div>
+
+        <div class="auth-card glass-effect">
+            <h3>USER LOGIN</h3>
+
+            <!-- Visual Role Tabs -->
+            <div class="role-selector">
+                <button type="button" class="role-btn active" onclick="selectRole(this, 'patient')">Patient</button>
+                <button type="button" class="role-btn" onclick="selectRole(this, 'doctor')">Doctor</button>
+            </div>
+
+            {% if error %}
+            <div class="alert-error">
+                <i class="fa-solid fa-circle-exclamation"></i> {{ error }}
+            </div>
+            {% endif %}
+
+            <form action="{{ url_for('auth.login') }}" method="POST">
+
+                <div class="input-group-icon">
+                    <span class="input-icon"><i class="fa-solid fa-user"></i></span>
+                    <input type="email" name="email" placeholder="email@hospital.org" required>
+                </div>
+
+                <div class="input-group-icon">
+                    <span class="input-icon"><i class="fa-solid fa-lock"></i></span>
+                    <input type="password" name="password" placeholder="••••••••••••" required>
+                </div>
+
+                <div class="auth-actions">
+                    <label class="checkbox-container">
+                        <input type="checkbox" name="remember">
+                        Remember Me
+                    </label>
+                    <a href="{{ url_for('auth.forgot_password') }}" class="forgot-link">Forget Password?</a>
+                </div>
+
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <p style="margin-top: 20px; color: rgba(255,255,255,0.8); font-size: 0.9rem;">
+                New here? <a href="{{ url_for('auth.register') }}"
+                    style="color: white; font-weight: bold; text-decoration: underline;">Create Account</a>
+            </p>
+        </div>
+    </div>
+</div>
+
+<script>
+    function selectRole(btn, role) {
+        document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        // If backend needed role hint, we would set a hidden input here.
+        // For now, it's purely visual matching the request.
+    }
+</script>
+{% endblock %}

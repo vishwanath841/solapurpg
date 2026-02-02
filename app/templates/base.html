@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SHM - Hospital Management{% endblock %}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script>
+        const SUPABASE_URL = "{{ config.SUPABASE_URL }}";
+        const SUPABASE_KEY = "{{ config.SUPABASE_KEY }}";
+    </script>
+    <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">SHM Hospital</a>
+            <ul class="nav-links">
+                {% if g.user %}
+                {% if request.path.startswith('/doctor') %}
+                <li><a href="{{ url_for('doctor.dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('doctor.schedule') }}">Schedule</a></li>
+                {% else %}
+                <li><a href="{{ url_for('patient.dashboard') }}">Dashboard</a></li>
+                <li><a href="{{ url_for('patient.view_doctors') }}">Find Doctors</a></li>
+                {% endif %}
+                <li><a href="{{ url_for('auth.logout') }}">Logout</a></li>
+                {% else %}
+                <li><a href="{{ url_for('auth.login') }}">Login</a></li>
+                <li><a href="{{ url_for('auth.register') }}">Register</a></li>
+                {% endif %}
+            </ul>
+        </div>
+    </nav>
+    <div class="main-content container">
+        {% block content %}{% endblock %}
+    </div>
+    <footer>
+        <div class="container">
+            <p>&copy; 2026 SHM Hospital. Real-time Management System.</p>
+        </div>
+    </footer>
+</body>
+
+</html>

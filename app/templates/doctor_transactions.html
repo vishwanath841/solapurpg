@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    .navbar {
+        display: none;
+    }
+
+    .main-content {
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    .container {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body {
+        background: #F3F4F6;
+    }
+</style>
+
+<div class="dashboard-container">
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-staff-snake"></i>
+            <span>SHM</span>
+        </div>
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('doctor.dashboard') }}" class="sidebar-link"><i
+                        class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('doctor.patients') }}" class="sidebar-link"><i class="fa-solid fa-users"></i>
+                    Patient Management</a></li>
+            <li><a href="{{ url_for('doctor.schedule') }}" class="sidebar-link"><i
+                        class="fa-solid fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="{{ url_for('doctor.transactions') }}" class="sidebar-link active"><i
+                        class="fa-solid fa-wallet"></i> Transactions</a></li>
+        </ul>
+        <div style="margin-top: auto;">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </a>
+        </div>
+    </aside>
+    <main style="padding: 30px; overflow-y: auto;">
+        <h2>Financial Transactions</h2>
+        <div class="card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Patient</th>
+                        <th>Type</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>{{ t.appointment_date | replace('T', ' ') }}</td>
+                        <td>{{ t.profiles.full_name }}</td>
+                        <td>Consultation Fee</td>
+                        <td style="color:green; font-weight:bold;">+₹{{ fee }}</td>
+                        <td><span class="status-completed">Completed</span></td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5">No transactions yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </main>
+</div>
+{% endblock %}

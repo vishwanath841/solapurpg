@@ -1,0 +1,61 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="container">
+    <h1>Manage Schedule & Profile</h1>
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('doctor.dashboard') }}">Back to Dashboard</a>
+    </div>
+
+    {% if message %}
+    <div class="card" style="background: #d4edda; color: #155724;">
+        {{ message }}
+    </div>
+    {% endif %}
+
+    <div class="card">
+        <form method="POST">
+            <div class="form-group">
+                <label>Full Name</label>
+                <input type="text" name="full_name" value="{{ doctor.profiles.full_name if doctor.profiles else '' }}"
+                    placeholder="Dr. Name" required>
+            </div>
+
+            <div class="form-group">
+                <label>Specialization</label>
+                <input type="text" name="specialization" value="{{ doctor.specialization or '' }}"
+                    placeholder="e.g. Cardiologist" required>
+            </div>
+
+            <div class="form-group">
+                <label>Consultation Fee (₹)</label>
+                <input type="number" name="fee" value="{{ doctor.consultation_fee or '' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label>Available Days</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    {% for day in ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] %}
+                    <label>
+                        <input type="checkbox" name="days" value="{{ day }}" {% if doctor.available_days and day in
+                            doctor.available_days %}checked{% endif %}>
+                        {{ day }}
+                    </label>
+                    {% endfor %}
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label>Start Time</label>
+                <input type="time" name="start_time" value="{{ doctor.start_time or '' }}">
+            </div>
+
+            <div class="form-group">
+                <label>End Time</label>
+                <input type="time" name="end_time" value="{{ doctor.end_time or '' }}">
+            </div>
+
+            <button type="submit" class="btn btn-primary">Save Schedule</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

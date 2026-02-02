@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<!-- Use a wrapper to override base container constraints if needed, or rely on styles -->
+<style>
+    /* Override base container for dashboard view to allow full width sidebar layout */
+    .navbar {
+        display: none;
+    }
+
+    /* Hide default top nav */
+    .main-content {
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    .container {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body {
+        background: #F3F4F6;
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-staff-snake"></i>
+            <span>SHM</span>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('doctor.dashboard') }}" class="sidebar-link active"><i
+                        class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('doctor.patients') }}" class="sidebar-link"><i class="fa-solid fa-users"></i>
+                    Patient Management</a></li>
+            <li><a href="{{ url_for('doctor.schedule') }}" class="sidebar-link"><i
+                        class="fa-solid fa-calendar-check"></i> Appointments</a></li>
+            <li><a href="{{ url_for('doctor.transactions') }}" class="sidebar-link"><i class="fa-solid fa-wallet"></i>
+                    Transactions</a></li>
+        </ul>
+
+        <div style="margin-top: auto;">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main style="padding: 30px; overflow-y: auto;">
+
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div>
+                <h2 style="margin:0;">Dashboard</h2>
+                <p style="color:var(--text-muted); margin:0;">Welcome back, Dr. {{ user.email.split('@')[0] }}</p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <div class="search-bar">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input type="text" placeholder="Search appointments..." id="dashSearch" onkeyup="filterDashboard()">
+                </div>
+
+                <button
+                    style="border:none; background:white; width:40px; height:40px; border-radius:50%; box-shadow:var(--shadow-sm); cursor:pointer;">
+                    <i class="fa-regular fa-bell" style="color:var(--text-main);"></i>
+                </button>
+
+                <div class="user-profile">
+                    <div style="text-align: right;">
+                        <span style="display:block; font-weight:600; font-size:0.9rem;">Dr. {{ user.email }}</span>
+                    </div>
+                    <div class="user-avatar">DR</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-user-injured"></i></div>
+                <div class="stat-info">
+                    <h4>Total Appointments</h4>
+                    <p>{{ appointments|length }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-clock"></i></div>
+                <div class="stat-info">
+                    <h4>Pending</h4>
+                    <p>{{ appointments | selectattr("status", "equalto", "pending") | list | length }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-check-circle"></i></div>
+                <div class="stat-info">
+                    <h4>Completed</h4>
+                    <p>{{ appointments | selectattr("status", "equalto", "completed") | list | length }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="fa-solid fa-wallet"></i></div>
+                <div class="stat-info">
+                    <h4>Earnings</h4>
+                    <p>₹{{ earnings }}</p> <!-- Realtime Variable -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts (Visual Only for now) -->
+        <div class="charts-grid">
+            <div class="chart-card">
+                <div style="display:flex; justify-content:space-between; margin-bottom:20px;">
+                    <h3 style="font-size:1.1rem; margin:0;">Income Analytics</h3>
+                </div>
+                <!-- Canvas for Chart.js -->
+                <canvas id="financeChart"></canvas>
+            </div>
+            <div class="chart-card">
+                <h3 style="font-size:1.1rem; margin-bottom:20px;">Patient Stats</h3>
+                <canvas id="incomeChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Recent Appointments -->
+        <div class="card" style="border:none; padding: 0; background: transparent; box-shadow: none;">
+            <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E7EB;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 20px;">
+                    <h3 style="margin:0; font-size:1.2rem;">Recent Appointments</h3>
+                    <a href="#" style="font-size:0.9rem;">View All</a>
+                </div>
+
+                <table id="dashTable">
+                    <thead>
+                        <tr>
+                            <th>Patient Name</th>
+                            <th>Date</th>
+                            <th>Status</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments[:10] %}
+                        <tr>
+                            <td style="display:flex; align-items:center; gap:10px; border:none;">
+                                <div
+                                    style="width:32px; height:32px; background:#E5E7EB; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:0.8rem;">
+                                    {{ appt.profiles.full_name[:2] }}
+                                </div>
+                                {{ appt.profiles.full_name }}
+                            </td>
+                            <td>{{ appt.appointment_date | replace('T', ' ') }}</td>
+                            <td><span class="status-{{ appt.status }}">{{ appt.status }}</span></td>
+                            <td>
+                                {% if appt.status == 'pending' %}
+                                <button onclick="updateStatus('{{ appt.id }}', 'confirmed')" class="btn btn-success"
+                                    style="padding:4px 10px; font-size:0.8rem;">Accept</button>
+                                <button onclick="updateStatus('{{ appt.id }}', 'cancelled')" class="btn"
+                                    style="background:red; color:white; padding:4px 10px; font-size:0.8rem;">Reject</button>
+                                {% elif appt.status == 'confirmed' %}
+                                <button
+                                    onclick="openPrescriptionModal('{{ appt.id }}', '{{ appt.profiles.full_name }}')"
+                                    class="btn btn-primary"
+                                    style="padding:4px 10px; font-size:0.8rem;">Prescribe</button>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- Prescription Modal (Reused) -->
+<div id="prescriptionModal"
+    style="display:none; position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.5); z-index: 1000;">
+    <div style="background:white; max-width:500px; margin: 50px auto; padding:20px; border-radius:8px;">
+        <h3>Write Prescription</h3>
+        <form onsubmit="submitPrescription(event)">
+            <input type="hidden" id="modalApptId">
+            <div class="form-group">
+                <label>Diagnosis</label>
+                <textarea id="modalDiagnosis" required rows="3"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Medicines (Name - Dose)</label>
+                <textarea id="modalMedicines" required rows="5"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Submit</button>
+            <button type="button" class="btn" onclick="closeModal()" style="background:#ccc;">Cancel</button>
+        </form>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Search Filter
+    function filterDashboard() {
+        const input = document.getElementById("dashSearch");
+        const filter = input.value.toUpperCase();
+        const table = document.getElementById("dashTable");
+        const tr = table.getElementsByTagName("tr");
+
+        for (let i = 0; i < tr.length; i++) {
+            const td = tr[i].getElementsByTagName("td")[0];
+            if (td) {
+                const txtValue = td.textContent || td.innerText;
+                if (txtValue.toUpperCase().indexOf(filter) > -1) {
+                    tr[i].style.display = "";
+                } else {
+                    tr[i].style.display = "none";
+                }
+            }
+        }
+    }
+
+    // Update Appointment Status
+    async function updateStatus(id, status) {
+        console.log("Updating status for ID:", id, "to:", status);
+        if (!confirm(`Mark appointment as ${status}?`)) return;
+        try {
+            const response = await fetch(`/doctor/appointment/${id}/status`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ status: status })
+            });
+            if (response.ok) {
+                window.location.reload();
+            } else {
+                alert('Error updating status');
+            }
+        } catch (error) {
+            console.error('Update Status Error:', error);
+        }
+    }
+
+    // Patient Prescription Functions
+    function openPrescriptionModal(id, patientName) {
+        document.getElementById('modalApptId').value = id;
+        document.getElementById('prescriptionModal').style.display = 'block';
+    }
+
+    function closeModal() {
+        document.getElementById('prescriptionModal').style.display = 'none';
+    }
+
+    async function submitPrescription(e) {
+        e.preventDefault();
+        const id = document.getElementById('modalApptId').value;
+        const diagnosis = document.getElementById('modalDiagnosis').value;
+        const medicinesText = document.getElementById('modalMedicines').value;
+        const medicines = medicinesText.split('\n').filter(l => l.trim()).map(l => {
+            const parts = l.split('-');
+            return {
+                name: parts[0] ? parts[0].trim() : 'Medicine',
+                dosage: parts[1] ? parts[1].trim() : 'As directed'
+            };
+        });
+
+        try {
+            const res = await fetch(`/doctor/prescribe/${id}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ diagnosis, medicines })
+            });
+            if (res.ok) {
+                alert('Prescription Sent!');
+                window.location.reload();
+            } else {
+                alert('Error submitting prescription');
+            }
+        } catch (error) {
+            console.error('Prescription Submission Error:', error);
+        }
+    }
+
+    // Charts Initialization
+    document.addEventListener('DOMContentLoaded', () => {
+        // Income Analytics Chart
+        const monthlyData = {{ monthly_income | tojson }};
+    const financeCtx = document.getElementById('financeChart').getContext('2d');
+    new Chart(financeCtx, {
+        type: 'bar',
+        data: {
+            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+            datasets: [{
+                label: 'Income (₹)',
+                data: monthlyData,
+                backgroundColor: '#2563EB',
+                borderRadius: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } },
+            scales: { y: { beginAtZero: true } }
+        }
+    });
+
+    // Patient Stats Chart
+    const pendingCount = {{ appointments | selectattr("status", "equalto", "pending") | list | length }};
+    const completedCount = {{ appointments | selectattr("status", "equalto", "completed") | list | length }};
+    const cancelledCount = {{ appointments | selectattr("status", "equalto", "cancelled") | list | length }};
+
+    const statsCtx = document.getElementById('incomeChart').getContext('2d');
+    new Chart(statsCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Pending', 'Completed', 'Cancelled'],
+            datasets: [{
+                data: [pendingCount, completedCount, cancelledCount],
+                backgroundColor: ['#F59E0B', '#10B981', '#DC2626']
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: { legend: { position: 'bottom' } }
+        }
+    });
+    });
+</script>
+{% endblock %}

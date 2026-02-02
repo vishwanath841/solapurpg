@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container">
+    <h1>My Billing</h1>
+    <div style="margin-bottom: 20px;">
+        <a href="{{ url_for('patient.dashboard') }}">Back to Dashboard</a>
+    </div>
+
+    <div class="card">
+        <h3>Total Outstanding: ₹{{ total }}</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Doctor</th>
+                    <th>Fee</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                <tr>
+                    <td>{{ item.date | replace('T', ' ') }}</td>
+                    <td>Dr. {{ item.doctor }}</td>
+                    <td>₹{{ item.fee }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% if not items %}
+        <p>No billing records found.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

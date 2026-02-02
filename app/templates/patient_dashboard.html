@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<style>
+    /* Override base for dashboard layout */
+    .navbar {
+        display: none;
+    }
+
+    .main-content {
+        padding: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+    }
+
+    .container {
+        max-width: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    body {
+        background: #F3F4F6;
+    }
+</style>
+
+<div class="dashboard-container">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+        <div class="sidebar-brand">
+            <i class="fa-solid fa-staff-snake"></i>
+            <span>SHM Patient</span>
+        </div>
+
+        <ul class="sidebar-menu">
+            <li><a href="{{ url_for('patient.dashboard') }}" class="sidebar-link active"><i
+                        class="fa-solid fa-table-columns"></i> Dashboard</a></li>
+            <li><a href="{{ url_for('patient.view_doctors') }}" class="sidebar-link"><i
+                        class="fa-solid fa-user-doctor"></i> Find Doctors</a></li>
+            <li><a href="{{ url_for('patient.prescriptions') }}" class="sidebar-link"><i
+                        class="fa-solid fa-file-prescription"></i> Prescriptions</a></li>
+            <li><a href="{{ url_for('patient.billing') }}" class="sidebar-link"><i
+                        class="fa-solid fa-file-invoice-dollar"></i> Billing</a></li>
+            <li><a href="{{ url_for('patient.profile') }}" class="sidebar-link"><i class="fa-solid fa-user-gear"></i> My
+                    Profile</a></li>
+        </ul>
+
+        <div style="margin-top: auto;">
+            <a href="{{ url_for('auth.logout') }}" class="sidebar-link">
+                <i class="fa-solid fa-right-from-bracket"></i> Log Out
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main style="padding: 30px; overflow-y: auto;">
+
+        <!-- Header -->
+        <header class="dashboard-header">
+            <div>
+                <h2 style="margin:0;">Dashboard</h2>
+                <p style="color:var(--text-muted); margin:0;">Hello, {{ user.email.split('@')[0] }}</p>
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 20px;">
+                <a href="{{ url_for('patient.view_doctors') }}" class="btn btn-primary"
+                    style="padding: 10px 20px; border-radius: 25px;">
+                    <i class="fa-solid fa-plus"></i> Book Appointment
+                </a>
+                <div class="user-profile">
+                    <div style="text-align: right;">
+                        <span style="display:block; font-weight:600; font-size:0.9rem;">Patient</span>
+                    </div>
+                    <div class="user-avatar" style="background: var(--secondary-color);">PA</div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Stats Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="fa-solid fa-calendar-days"></i></div>
+                <div class="stat-info">
+                    <h4>Overview</h4>
+                    <p>{{ appointments|length }} Upcoming</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="fa-solid fa-file-prescription"></i></div>
+                <div class="stat-info">
+                    <h4>Prescriptions</h4>
+                    <p>{{ prescriptions_count }}</p>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="fa-solid fa-wallet"></i></div>
+                <div class="stat-info">
+                    <h4>Total Spent</h4>
+                    <p>₹{{ total_spent }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Appointments List -->
+        <h3 style="margin-top: 30px; margin-bottom: 20px;">Your Appointments</h3>
+        <div class="card" style="border:none; padding: 0; background: transparent; box-shadow: none;">
+            <div style="background: white; padding: 20px; border-radius: 16px; border: 1px solid #E5E7EB;">
+                {% if appointments %}
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Doctor</th>
+                            <th>Status</th>
+                            <th>Notes</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for appt in appointments %}
+                        <tr>
+                            <td>{{ appt.appointment_date | replace('T', ' ') }}</td>
+                            <td>
+                                <div style="font-weight:600;">Dr. {{ appt.doctors.profiles.full_name }}</div>
+                                <div style="font-size:0.8rem; color:var(--text-muted);">{{ appt.doctors.specialization
+                                    }}</div>
+                            </td>
+                            <td><span class="status-{{ appt.status }}">{{ appt.status }}</span></td>
+                            <td>{{ appt.notes or '-' }}</td>
+                            <td>
+                                {% if appt.status == 'pending' or appt.status == 'confirmed' %}
+                                <button onclick="rescheduleAppointment('{{ appt.id }}')" class="btn"
+                                    style="background: #F59E0B; color: white; padding: 5px 10px; font-size: 0.8rem;">Reschedule</button>
+                                <button onclick="cancelAppointment('{{ appt.id }}')" class="btn"
+                                    style="background: #EF4444; color: white; padding: 5px 10px; font-size: 0.8rem;">Cancel</button>
+                                {% else %}
+                                <span style="color:var(--text-muted);">-</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                {% else %}
+                <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                    <i class="fa-regular fa-calendar-xmark" style="font-size: 3rem; margin-bottom: 10px;"></i>
+                    <p>No upcoming appointments.</p>
+                    <a href="{{ url_for('patient.view_doctors') }}" style="color: var(--primary-color);">Find a
+                        Doctor</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </main>
+</div>
+
+<script>
+    async function cancelAppointment(id) {
+        if (!confirm('Are you sure you want to cancel this appointment?')) return;
+        const response = await fetch(`/appointment/cancel/${id}`, { method: 'POST' });
+        if (response.ok) { window.location.reload(); }
+        else { alert('Failed to cancel'); }
+    }
+
+    async function rescheduleAppointment(id) {
+        const newDate = prompt("Enter new Date & Time (YYYY-MM-DDTHH:MM):");
+        if (!newDate) return;
+        const response = await fetch(`/appointment/reschedule/${id}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ appointment_date: newDate })
+        });
+        if (response.ok) { alert('Rescheduled!'); window.location.reload(); }
+        else { alert('Failed'); }
+    }
+</script>
+{% endblock %}
