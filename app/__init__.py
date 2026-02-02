@@ -30,3 +30,6 @@ def create_app():
         return redirect(url_for('auth.login'))
 
     return app
+
+# Expose app for Gunicorn/Deployment
+app = create_app()
